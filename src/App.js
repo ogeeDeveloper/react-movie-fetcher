@@ -7,23 +7,49 @@ function App() {
   // Create a state to old the movie results from the API result
   const [movie, setMovie] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const fetchMovieHandler = async () => {
     setIsLoading(true)
-    const respose = await fetch(`https://swapi.dev/api/films`)
-    const data = await respose.json() // Get thhe jsonn data from the API
+    setError(null)
 
-    // Parse Result
-    const transformedData = data.results.map((movieData) => {
-      return {
-        id: movieData.episode_id,
-        title: movieData.title,
-        openingText: movieData.opening_crawl,
-        release_date: movieData.release_date,
+    try {
+      const respose = await fetch(`https://swapi.dev/api/films`)
+
+      if (!respose.ok) {
+        throw new Error("Something went wrong, please try again later")
       }
-    })
-    setMovie(transformedData)
+
+      const data = await respose.json() // Get the jsonn data from the API
+
+      // Parse Result
+      const transformedData = data.results.map((movieData) => {
+        return {
+          id: movieData.episode_id,
+          title: movieData.title,
+          openingText: movieData.opening_crawl,
+          release_date: movieData.release_date,
+        }
+      })
+      setMovie(transformedData)
+    } catch (err) {
+      setError(err.message)
+    }
     setIsLoading(false)
+  }
+
+  let content = <p>Movie list is empty</p>
+
+  if (movie.length > 0) {
+    content = <MoviesList movies={movie} />
+  }
+
+  if (error) {
+    content = <p>{error}</p>
+  }
+
+  if (isLoading) {
+    content = <p>Loading...</p>
   }
 
   return (
@@ -31,11 +57,7 @@ function App() {
       <section>
         <button onClick={fetchMovieHandler}>Fetch Movies</button>
       </section>
-      <section>
-        {!isLoading && movie.length > 0 && <MoviesList movies={movie} />}
-        {!isLoading && movie.length === 0 && <p>Movie list is empty</p>}
-        {isLoading && <p>Loading...</p>}
-      </section>
+      <section>{content}</section>
     </React.Fragment>
   )
 }
